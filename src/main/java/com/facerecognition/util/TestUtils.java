@@ -16,8 +16,10 @@ package com.facerecognition.util;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.io.Reader;
 import java.io.StringReader;
 
@@ -30,21 +32,20 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathFactory;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.json.JSONObject;
 import org.json.XML;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import com.facerecognition.model.XPathValue;
-
+import com.facerecognition.runner.TestRunner;
 
 public class TestUtils {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(TestUtils.class);
-
 
 	@SuppressWarnings("unchecked")
 	public static <T> T xmlToResponse(String xml, Class<T> clazz) throws JAXBException {
@@ -97,7 +98,7 @@ public class TestUtils {
 		XPathValue xPathValue = new XPathValue();
 
 		NodeList result = getObjectUsingXPath(document, objectPath);
-		if(result!=null){
+		if (result != null) {
 			xPathValue.setNodeList(result);
 			int length = result.getLength();
 			xPathValue.setCount(length);
@@ -109,57 +110,100 @@ public class TestUtils {
 					xPathValue.setNodeValue(child.getNodeValue());
 				}
 			}
-			
+
 		}
 		return xPathValue;
 	}
-	
-	public static String executeCommand(String command) {
 
-		StringBuffer output = new StringBuffer();
+	public static String executeCommand(String command) {
+		StringBuffer response = new StringBuffer();
+		StringBuffer error = new StringBuffer();
 
 		Process p;
 		try {
 			p = Runtime.getRuntime().exec(command);
-			p.waitFor();
-			BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
 
+			BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
 			String line = "";
 			while ((line = reader.readLine()) != null) {
-				output.append(line + "\n");
+				response.append(line + "\n");
 			}
+
+			//
+			BufferedReader readerError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+			while ((line = readerError.readLine()) != null) {
+				error.append(line + "\n");
+			}
+
+			LOGGER.debug("Response\n" + response.toString());
+			if (error.length() > 0) {
+				LOGGER.debug("Error\n" + error.toString());
+			}
+
+			p.waitFor();
 
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
-		return output.toString();
+		return response.toString();
 
 	}
 
-	public static void main(String[] args) {
+	public static String getCmdResponse(final InputStream is) {
+		StringBuffer output = new StringBuffer();
+		final InputStreamReader streamReader = new InputStreamReader(is);
+		BufferedReader br = new BufferedReader(streamReader);
+		String line = null;
 		try {
-			String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><response><channel><linear adult=\"true\"></linear><linear /></channel></response>";
-			String objectPath = null;
-			XPathValue xPathValue;
-
-			objectPath = "//channel/linear[1]/@adult";
-			xPathValue = getXPathValue(xmlToDocument(xml), objectPath);
-			System.out.println(objectPath + " getNodeName: " + xPathValue.getNodeName());
-			System.out.println(objectPath + " getFirstChild: " + xPathValue.getFirstChild());
-			System.out.println(objectPath + " count: " + xPathValue.getCount());
-			System.out.println(objectPath + " value: " + xPathValue.getNodeValue());
-
-//			objectPath = "//channel/linear[2]";
-//			xPathValue = getXPathValue(xmlToDocument(xml), objectPath);
-//			System.out.println(objectPath + " getNodeName: " + xPathValue.getNodeName());
-//			System.out.println(objectPath + " getFirstChild: " + xPathValue.getFirstChild());
-//			System.out.println(objectPath + " count: " + xPathValue.getCount());
-//			System.out.println(objectPath + " value: " + xPathValue.getNodeValue());
-
-		} catch (Exception e) {
+			while ((line = br.readLine()) != null) {
+				output.append(line);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				br.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 
+		return output.toString();
 	}
 
+	public static void main(String[] args) throws Exception {
+		String cmd = null;
+		//
+		cmd = "/usr/local/bin/http --ignore-stdin -a namhnt1:admin123  -f POST http://10.88.96.94:8118/imagebank/ image@/Users/sontth/Documents/FaceRecognitionTest/mintt_f/mi1.jpg name=mintt gender=F";
+		// cmd = "-a namhnt1:admin123 -f POST http://10.88.96.94:8118/imagebank/
+		// image@/Users/sontth/Documents/FaceRecognitionTest/mintt_f/mi1.jpg
+		// name=mintt gender=F";
+
+		//// cmd = "ping google.com";
+		executeCommand(cmd);
+
+		// ProcessBuilder pb = new ProcessBuilder("/usr/local/bin/http", cmd);
+		// System.out.println("Run echo command");
+		// Process process = pb.start();
+		// int errCode = process.waitFor();
+		// System.out.println("Echo command executed, any errors? " + (errCode
+		// == 0 ? "No" : "Yes"));
+		// System.out.println("Echo Output:\n" +
+		// output(process.getInputStream()));
+	}
+
+	private static String output(InputStream inputStream) throws IOException {
+		StringBuilder sb = new StringBuilder();
+		BufferedReader br = null;
+		try {
+			br = new BufferedReader(new InputStreamReader(inputStream));
+			String line = null;
+			while ((line = br.readLine()) != null) {
+				sb.append(line + System.getProperty("line.separator"));
+			}
+		} finally {
+			br.close();
+		}
+		return sb.toString();
+	}
 }

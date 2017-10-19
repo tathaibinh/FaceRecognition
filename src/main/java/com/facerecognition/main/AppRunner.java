@@ -1,7 +1,7 @@
 /**
  * 
  * FACE_RECOGNITION PROPRIETARY
- * Copyright© 2017 FACE_RECOGNITION, INC.
+ * Copyrightï¿½ 2017 FACE_RECOGNITION, INC.
  * UNPUBLISHED WORK
  * ALL RIGHTS RESERVED
  * 
@@ -14,13 +14,26 @@
  */
 package com.facerecognition.main;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import com.facerecognition.model.Configuration;
 import com.facerecognition.runner.TestRunner;
 
 public class AppRunner {
+	private static final Logger LOGGER = LoggerFactory.getLogger(AppRunner.class);
+
 	public static void main(String[] args) {
+		Configuration configuration;
+		LOGGER.info("Creating configuration environment ...");
+		if (args.length == 0) {
+			configuration = new Configuration().init();
+		} else {
+			configuration = new Configuration(args[0]).init();
+		}
+		LOGGER.info("############# Start running test ... ################");
+		new TestRunner().excuteTest(configuration);
 
-		new TestRunner().excuteTest();
-
+		LOGGER.info("################ Done running test ... ################");
 	}
 
 }

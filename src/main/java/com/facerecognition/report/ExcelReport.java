@@ -43,6 +43,7 @@ import org.slf4j.LoggerFactory;
 import com.facerecognition.model.Configuration;
 import com.facerecognition.model.TestCase;
 import com.facerecognition.model.TestCaseStatus;
+import com.facerecognition.runner.TestRunner;
 import com.facerecognition.util.Utils;
 
 public class ExcelReport {
@@ -106,10 +107,13 @@ public class ExcelReport {
 
 	public void start() {
 		DateFormat df = new SimpleDateFormat("MM-dd-yyyy-hhmmss");
-		reportFile = new StringBuffer("TestReport-").append(df.format(new Date().getTime())).append(".xlsx").toString();
+		reportFile = new StringBuffer("report/TestReport-").append(df.format(new Date().getTime())).append(".xlsx")
+				.toString();
 	}
 
 	public void generateReport() {
+		start();
+
 		InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream(REPORT_TEMPLATE);
 
 		try {
@@ -161,14 +165,20 @@ public class ExcelReport {
 		// TEST RESULT SUMMARY
 		iRow = TEST_RESULT_SUMMARY_ROW_START;
 		iCol = TEST_RESULT_SUMMARY_COL;
-		setCellValueForCol("");
-		setCellValueForCol("START TIME");
-		setCellValueForCol("END TIME");
-		setCellValueForCol("TOTAL TIME");
-		setCellValueForCol(Utils.toString(this.numOfFailedCase + this.numOfPassedCase));
-		setCellValueForCol(Utils.toString(this.numOfPassedCase));
+		setCellValueForCol(configuration.getProjectName());
+		setCellValueForCol(TestRunner.startTime.toString());
+		setCellValueForCol(TestRunner.endTime.toString());
+		setCellValueForCol(Utils.difference(TestRunner.startTime, TestRunner.endTime));
+
+		int totalTestCase = numOfFailedCase + numOfPassedCase;
+		setCellValueForCol(Utils.toString(totalTestCase));
+
+		setCellValueForCol(
+				Utils.toString(this.numOfPassedCase) + " " + Utils.percent(this.numOfPassedCase, totalTestCase));
 		this.cell.setCellStyle(cellStylePass);
-		setCellValueForCol(Utils.toString(this.numOfFailedCase));
+
+		setCellValueForCol(
+				Utils.toString(this.numOfFailedCase) + " " + Utils.percent(this.numOfFailedCase, totalTestCase));
 		this.cell.setCellStyle(cellStyleFail);
 
 	}

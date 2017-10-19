@@ -83,6 +83,9 @@ public class Utils {
 
 	}
 
+	public static String percent(int num, int total){
+		return "("+(double)Math.round( 100 *num/total )+" %)";
+	}
 	public static void main(String[] args) {
 		System.out.println(difference(new Date(), new Date()));
 	}
