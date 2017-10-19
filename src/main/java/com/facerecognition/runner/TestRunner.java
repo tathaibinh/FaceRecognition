@@ -14,6 +14,7 @@
  */
 package com.facerecognition.runner;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -39,12 +40,12 @@ import com.facerecognition.report.ExcelReport;
 import com.facerecognition.util.TestUtils;
 
 public class TestRunner {
+	private static final Logger LOGGER = LoggerFactory.getLogger(TestRunner.class);
+	
 	private static final String GENDER_MALE = "M";
 	private static final String GENDER_FEMALE = "F";
-	private static final String MALE = "Male";
-	private static final String FEMALE = "Female";
+	private static final String HTTP_CMD = "/usr/local/bin/http --ignore-stdin ";
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(TestRunner.class);
 
 	private static final String GENDER_OBJ_PATH = "//gender";
 	private static final String NAME_OBJ_PATH = "//name";
@@ -59,8 +60,8 @@ public class TestRunner {
 
 	private Configuration configuration;
 
-	public Date startTime;
-	public Date endTime;
+	public static Date startTime;
+	public static Date endTime;
 
 	private ExcelReport report;
 
@@ -68,20 +69,23 @@ public class TestRunner {
 	private String username;
 	private String gender;
 
-	public void excuteTest() {
-		configuration = new Configuration().init();
+	public void excuteTest(Configuration configuration) {
+		startTime = new Date();
+		this.configuration = configuration;
 
 		testCases = new ArrayList<>();
 		// create test case
 		File dir = new File(configuration.getTestDir());
 		if (dir == null || !dir.isDirectory()) {
+			LOGGER.error("Base Directory is not a directory " + configuration.getTestDir());
 			return;
 		}
 		File[] listOfFiles = dir.listFiles();
 		for (int i = 0; i < listOfFiles.length; i++) {
 			File userFolder = listOfFiles[i];
 			if (!userFolder.isDirectory()) {
-				return;
+				LOGGER.warn("User folder is not a directory: " + userFolder.getAbsolutePath());
+				continue;
 			}
 
 			getUserInfo(userFolder.getName());
@@ -107,6 +111,7 @@ public class TestRunner {
 
 		}
 
+		endTime = new Date();
 		// generate report
 		report = new ExcelReport(testCases, configuration);
 		report.generateReport();
@@ -114,38 +119,16 @@ public class TestRunner {
 	}
 
 	private void executeTestCase() {
-		if (!uploadImage()) {
-			return;
+		if (uploadImage()) {
+			verifyImage();
+		}else{
+			LOGGER.info("Upload failed: "+testCase.getId());
 		}
-		verifyImage();
-
-	}
-
-	private boolean verifyImage() {
-		boolean isExisted = false;
-
-		String verifyCommand = String.format("http -a % -f POST %/imagebank/ image@% ", configuration.getAccount(),
-				configuration.getServerURL(), testCase.getVerifiedImg().getAbsolutePath());
-
-		String response = TestUtils.executeCommand(verifyCommand);
-		try {
-			document = TestUtils.jsonToDocument(response);
-			// verify gender
-			XPathValue actualGender = TestUtils.getXPathValue(this.document, GENDER_OBJ_PATH);
-			if (GENDER_MALE.equalsIgnoreCase(gender)) {
-				assertTrue(MALE.equals(actualGender.getNodeValue()));
-			} else if (GENDER_FEMALE.equalsIgnoreCase(gender)) {
-				assertTrue(FEMALE.equals(actualGender.getNodeValue()));
-			}
-
-			// verify username
-			XPathValue actualUsername = TestUtils.getXPathValue(this.document, NAME_OBJ_PATH);
-			assertTrue(username.equals(actualUsername.getNodeValue()));
-
-		} catch (Throwable e) {
-			testCase.setMessage(testCase.getMessage() + e.getMessage() + "\n");
+		if (testCase.getMessage().equals("")) {
+			testCase.setStatus(TestCaseStatus.PASSED.toString());
+		} else {
+			testCase.setStatus(TestCaseStatus.FAILED.toString());
 		}
-		return isExisted;
 	}
 
 	/**
@@ -155,43 +138,59 @@ public class TestRunner {
 	private boolean uploadImage() {
 		boolean isUploaded = false;
 
-		String uploadCommand = String.format("http -a % -f POST %/imagebank/ image@% name=% gender=%",
+		String uploadCommand = String.format(" -a %s -f POST %s/imagebank/ image@%s name=%s gender=%s",
 				configuration.getAccount(), configuration.getServerURL(), testCase.getUploadedImg().getAbsolutePath(),
 				username, gender);
 
-		String response = TestUtils.executeCommand(uploadCommand);
+		String response = TestUtils.executeCommand(HTTP_CMD + uploadCommand);
 		try {
-			assertTrue(response.startsWith("Added") && response.endsWith("embedding"));
+			assertTrue("Response starts with [\"Added or [\"Updated",response.startsWith("[\"Added") ||response.startsWith("[\"Updated"));
+//			assertTrue("Response ends with embedding\"]",response.endsWith("embedding\"]"));
 			isUploaded = true;
 		} catch (Throwable e) {
-			testCase.setMessage(testCase.getMessage() + e.getMessage() + "\n");
+			testCase.setMessage(testCase.getMessage() + e.getMessage() + "\n"+response+"\n");
 		}
 
 		return isUploaded;
 	}
+	
 
-	// protected void assertExpectation(Expectation expectation) throws
-	// Exception {
-	// String objectPath = expectation.getObject();
-	// String expected = expectation.getValue();
-	// String function = expectation.getFunction();
-	// String assertType = expectation.getAssertType();
-	// XPathValue actual = TestUtils.getXPathValue(this.document, objectPath);
-	// if (StringUtils.isNotEmpty(function)) {
-	// if (TestFunction.count.toString().equalsIgnoreCase(function)) {
-	// this.assertFunctionCount(actual, expected, assertType);
-	// } else if (TestFunction.sort.toString().equalsIgnoreCase(function)) {
-	// /* [TODO] */
-	// // this.assertFunctionSort(response, objectPath,
-	// // expectedValue);
-	// } else {
-	// throw new RuntimeException("Test function " + function + " is not valid
-	// or not supported");
-	// }
-	// } else {
-	// this.assertValue(expected, actual, assertType, objectPath);
-	// }
-	// }
+
+	private boolean verifyImage() {
+		boolean isExisted = false;
+
+		String verifyCommand = String.format(" -a %s -f POST %s/imagebank/ image@%s ", configuration.getAccount(),
+				configuration.getServerURL(), testCase.getVerifiedImg().getAbsolutePath());
+
+		String response = TestUtils.executeCommand(HTTP_CMD + verifyCommand);
+		response = modifyResponse(response);
+		try {
+			document = TestUtils.jsonToDocument(response);
+			// verify gender
+			XPathValue actualGender = TestUtils.getXPathValue(this.document, GENDER_OBJ_PATH);
+			if (GENDER_MALE.equalsIgnoreCase(gender)) {
+				assertEquals(GENDER_MALE,actualGender.getNodeValue());
+			} else  {
+				assertEquals(GENDER_FEMALE,actualGender.getNodeValue());
+			}
+
+			// verify username
+			XPathValue actualUsername = TestUtils.getXPathValue(this.document, NAME_OBJ_PATH);
+			assertEquals(username,actualUsername.getNodeValue());
+
+		} catch (Throwable e) {
+			testCase.setMessage(testCase.getMessage() + e.getMessage() + "\n"+response+"\n");
+		}
+		return isExisted;
+	}
+
+
+	private  String modifyResponse(String response) {
+		StringBuilder builder = new StringBuilder(response.trim());
+		builder.deleteCharAt(builder.length()-1);
+		builder.deleteCharAt(0);
+		return builder.toString();
+	}
 
 	private void getUserInfo(String name) {
 		String[] user = name.split("_");

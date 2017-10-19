@@ -1,7 +1,7 @@
 /**
  * 
  * FACE_RECOGNITION PROPRIETARY
- * Copyright© 2017 FACE_RECOGNITION, INC.
+ * Copyrightï¿½ 2017 FACE_RECOGNITION, INC.
  * UNPUBLISHED WORK
  * ALL RIGHTS RESERVED
  * 
@@ -19,8 +19,8 @@ import java.io.InputStream;
 import java.util.Properties;
 
 public class Configuration {
-	private static final String CONFIG_FILE = "config.properties";
-	private String projectName ;
+	private String configFile = "config.properties";
+	private String projectName;
 	private String testDir;
 	private String serverURL;
 	private String account;
@@ -29,12 +29,16 @@ public class Configuration {
 		super();
 	}
 
+	public Configuration(String configFile) {
+		this.configFile = configFile;
+	}
+
 	public Configuration init() {
 		Properties prop = new Properties();
 		InputStream input = null;
 
 		/* load prop */
-		input = this.getClass().getClassLoader().getResourceAsStream(CONFIG_FILE);
+		input = this.getClass().getClassLoader().getResourceAsStream(configFile);
 		try {
 			prop.load(input);
 		} catch (IOException e) {
@@ -44,7 +48,6 @@ public class Configuration {
 		testDir = prop.getProperty("img.base.dir");
 		serverURL = prop.getProperty("server.url");
 		account = prop.getProperty("account");
-				
 
 		return this;
 	}
@@ -80,7 +83,5 @@ public class Configuration {
 	public void setAccount(String account) {
 		this.account = account;
 	}
-	
-	
 
 }
