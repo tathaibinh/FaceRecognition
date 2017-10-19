@@ -19,8 +19,6 @@ public class TestCase implements Serializable, Cloneable {
 	private transient Date startTime;
 	private transient Date endTime;
 
-	
-	
 	public TestCase() {
 		super();
 	}

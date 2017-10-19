@@ -16,6 +16,7 @@ package com.facerecognition.main;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import com.facerecognition.model.Configuration;
 import com.facerecognition.runner.TestRunner;
 

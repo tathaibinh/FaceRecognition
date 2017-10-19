@@ -78,14 +78,17 @@ public class Utils {
 		}
 		long millis = end.getTime() - start.getTime();
 		return String.format("%02d:%02d:%02d", TimeUnit.MILLISECONDS.toHours(millis),
-				TimeUnit.MILLISECONDS.toMinutes(millis) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(millis)),
-				TimeUnit.MILLISECONDS.toSeconds(millis) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(millis)));
+				TimeUnit.MILLISECONDS.toMinutes(millis)
+						- TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(millis)),
+				TimeUnit.MILLISECONDS.toSeconds(millis)
+						- TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(millis)));
 
 	}
 
-	public static String percent(int num, int total){
-		return "("+(double)Math.round( 100 *num/total )+" %)";
+	public static String percent(int num, int total) {
+		return "(" + (double) Math.round(100 * num / total) + " %)";
 	}
+
 	public static void main(String[] args) {
 		System.out.println(difference(new Date(), new Date()));
 	}
