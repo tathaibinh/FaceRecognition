@@ -32,6 +32,7 @@ import com.facerecognition.model.TestCase;
 import com.facerecognition.model.TestCaseStatus;
 import com.facerecognition.model.XPathValue;
 import com.facerecognition.report.ExcelReport;
+import com.facerecognition.util.Global;
 import com.facerecognition.util.TestUtils;
 
 public class TestRunner {
@@ -46,16 +47,11 @@ public class TestRunner {
 
 	private TestCase testCase;
 
-	private String logMessage;
-	private StringBuffer debugLog;
-	private StringBuffer logger;
-	private String body;
 	private Document document;
 
 	private Configuration configuration;
 
-	public static Date startTime;
-	public static Date endTime;
+	
 
 	private ExcelReport report;
 
@@ -64,7 +60,7 @@ public class TestRunner {
 	private String gender;
 
 	public void excuteTest(Configuration configuration) {
-		startTime = new Date();
+		Global.startTime = new Date();
 		this.configuration = configuration;
 
 		testCases = new ArrayList<>();
@@ -105,7 +101,7 @@ public class TestRunner {
 
 		}
 
-		endTime = new Date();
+		Global.endTime = new Date();
 		// generate report
 		report = new ExcelReport(testCases, configuration);
 		report.generateReport();

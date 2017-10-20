@@ -42,6 +42,7 @@ import com.facerecognition.model.Configuration;
 import com.facerecognition.model.TestCase;
 import com.facerecognition.model.TestCaseStatus;
 import com.facerecognition.runner.TestRunner;
+import com.facerecognition.util.Global;
 import com.facerecognition.util.Utils;
 
 public class ExcelReport {
@@ -105,8 +106,9 @@ public class ExcelReport {
 
 	public void start() {
 		DateFormat df = new SimpleDateFormat("MM-dd-yyyy-hhmmss");
-		reportFile = new StringBuffer("report/TestReport-").append(df.format(new Date().getTime())).append(".xlsx")
+		reportFile = new StringBuffer().append(Global.baseDir).append("/report/TestReport-").append(df.format(new Date().getTime())).append(".xlsx")
 				.toString();
+		
 	}
 
 	public void generateReport() {
@@ -164,9 +166,9 @@ public class ExcelReport {
 		iRow = TEST_RESULT_SUMMARY_ROW_START;
 		iCol = TEST_RESULT_SUMMARY_COL;
 		setCellValueForCol(configuration.getProjectName());
-		setCellValueForCol(TestRunner.startTime.toString());
-		setCellValueForCol(TestRunner.endTime.toString());
-		setCellValueForCol(Utils.difference(TestRunner.startTime, TestRunner.endTime));
+		setCellValueForCol(Global.startTime.toString());
+		setCellValueForCol(Global.endTime.toString());
+		setCellValueForCol(Utils.difference(Global.startTime, Global.endTime));
 
 		int totalTestCase = numOfFailedCase + numOfPassedCase;
 		setCellValueForCol(Utils.toString(totalTestCase));
