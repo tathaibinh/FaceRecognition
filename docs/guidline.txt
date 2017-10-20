@@ -1,0 +1,18 @@
+# Required environment
+	JDK 8 or later
+	http cli installed
+	maven
+	
+# Configuration
+	1. 	/src/main/resources/config.properties
+		img.base.dir	=	Base Directory where images are stored.
+		server.url		=	http://10.88.96.94:8118
+		account			=	namhnt1:admin123
+	2. Data should be store by template username_gender, Eg: mintt_F, namhnt1_m
+
+# Build by running cl:
+	mvn clean install
+	
+# Excute test:
+	java -jar target/FaceRecognition.AutoTest-0.0.1-SNAPSHOT-jar-with-dependencies.jar
+	
